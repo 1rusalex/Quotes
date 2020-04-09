@@ -9,7 +9,7 @@ public class Quote {
     @Id
     @GeneratedValue
     @Column(name = "Id", nullable = false)
-    transient private Long dbId;
+    private Long dbId;
 
     @Column(name = "bitmexId", nullable = false)
     private Long id;
