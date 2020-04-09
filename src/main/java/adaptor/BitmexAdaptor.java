@@ -4,6 +4,8 @@ package adaptor;
 import handler.CoreHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -15,7 +17,6 @@ import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-
 import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,6 +26,8 @@ import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 
 @Service
 public class BitmexAdaptor implements ApplicationContextAware {
+
+    private long pongTimeMillis = 0;
 
     private Log logger = LogFactory.getLog(this.getClass());
 
@@ -49,18 +52,19 @@ public class BitmexAdaptor implements ApplicationContextAware {
 
     public void init() {
         try {
+            pongTimeMillis = 0;
             WebSocketClient webSocketClient = new StandardWebSocketClient();
             webSocketSession = webSocketClient.doHandshake(new TextWebSocketHandler() {
                 @Override
                 public void handleTextMessage(WebSocketSession session, TextMessage message) {
-
-                    System.out.println(message.getPayload());
                     if (message.getPayload().equals("pong")) {
 
                     } else {
-                        if (context.containsBean(message.getPayload() + "_handler")) {
-                            CoreHandler handler = (CoreHandler) context.getBean(message.getPayload() + "_handler");
-                            handler.handleMessage(message);
+                        try {
+                            handleJsonMessage(message.getPayload());
+                        } catch (JSONException err) {
+                            logger.error("failed to convert string to JSONObject:" + message.getPayload());
+                            logger.error(err.getMessage());
                         }
                     }
                 }
@@ -74,9 +78,17 @@ public class BitmexAdaptor implements ApplicationContextAware {
             ScheduledExecutorService executorService = newSingleThreadScheduledExecutor();
             executorService.scheduleAtFixedRate(() -> {
                 try {
-                    System.out.println("ping sent");
-                    TextMessage message = new TextMessage("ping");
-                    webSocketSession.sendMessage(message);
+                    if (pongTimeMillis > 0 && System.currentTimeMillis() - pongTimeMillis > 60000) {
+                        logger.error("Remote server doesn't answer. Reconnect...");
+                        webSocketSession.close();
+                        webSocketSession = null;
+                        this.getWebSocketSession();
+                        shutdownAndAwaitTermination(executorService);
+                    } else {
+                        System.out.println("ping sent");
+                        TextMessage message = new TextMessage("ping");
+                        webSocketSession.sendMessage(message);
+                    }
                 } catch (Exception e) {
                     shutdownAndAwaitTermination(executorService);
                     //                    logger.error("Exception while sending a message", e);
@@ -102,6 +114,18 @@ public class BitmexAdaptor implements ApplicationContextAware {
             Thread.currentThread().interrupt();
         }
     }
+
+    private void handleJsonMessage(String jsonString) {
+        JSONObject jsonObject = new JSONObject(jsonString);
+        if (jsonObject.keySet().contains("table")) {
+            String tableName = jsonObject.getString("table");
+            if (context.containsBean(tableName + "_handler")) {
+                CoreHandler handler = (CoreHandler) context.getBean(tableName + "_handler");
+                handler.handleMessage(jsonObject);
+            }
+        }
+    }
+
 
 }
 

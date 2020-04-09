@@ -4,9 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import repository.OrderBookRepository;
-import repository.model.Quote;
-
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
@@ -17,8 +16,11 @@ public class OrderBookController {
     private OrderBookRepository orderBookRepository;
 
     @RequestMapping(value = "/quotes", method = GET)
-    public List<Quote> getQuotes () {
-        return orderBookRepository.getBest5Quotes();
+    public Map<String, Object> getQuotes () {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", orderBookRepository.getBestQuotes());
+        return response;
     }
 
 }

@@ -1,38 +1,23 @@
 package repository.model;
 
-import javax.persistence.*;
+public class Quote implements Comparable<Quote> {
 
-@Entity
-@Table(name = "quotes")
-public class Quote {
-
-    @Id
-    @GeneratedValue
-    @Column(name = "Id", nullable = false)
-    private Long dbId;
-
-    @Column(name = "bitmexId", nullable = false)
     private Long id;
 
-    @Column(name = "symbol", length = 64, nullable = false)
     private String symbol;
 
-    @Column(name = "side", length = 64, nullable = false)
     private String side;
 
-    @Column(name = "size", nullable = false)
     private Integer size;
 
-    @Column(name = "price", nullable = false)
-    private Integer price;
+    private Float price;
 
-    public Quote() {}
-
-    public Quote(Long id, String symbol, String side, Integer size) {
+    public Quote(Long id, String symbol, String side, Integer size, Float price) {
         this.id = id;
         this.symbol = symbol;
         this.side = side;
         this.size = size;
+        this.price = price;
 
     }
 
@@ -68,19 +53,38 @@ public class Quote {
         this.size = size;
     }
 
-    public Long getDbId() {
-        return dbId;
-    }
 
-    public void setDbId(Long dbId) {
-        this.dbId = dbId;
-    }
-
-    public Integer getPrice() {
+    public Float getPrice() {
         return price;
     }
 
-    public void setPrice(Integer price) {
+    public void setPrice(float price) {
         this.price = price;
+    }
+
+    public void mergeWith(Quote quote) {
+        synchronized (this) {
+            if (quote.getSide() != null) {
+                this.side = quote.getSide();
+            }
+            if (quote.getSize() != null) {
+                this.size = quote.getSize();
+            }
+            if (quote.getPrice() != null) {
+                this.price = quote.getPrice();
+            }
+        }
+    }
+
+    @Override
+    public int compareTo(Quote o) {
+        if (this.getPrice().equals(o.getPrice())) {
+            return 0;
+        }
+        else if (this.getPrice()>o.getPrice()) {
+            return -1;
+        } else {
+            return 1;
+        }
     }
 }

@@ -1,9 +1,9 @@
 package handler;
 
-import org.springframework.web.socket.TextMessage;
+import org.json.JSONObject;
 
 public interface CoreHandler {
 
-    void handleMessage(TextMessage message);
+    void handleMessage(JSONObject message);
 
 }
