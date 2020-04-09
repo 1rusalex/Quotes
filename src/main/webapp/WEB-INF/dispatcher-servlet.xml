@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans.xsd
+  http://www.springframework.org/schema/context
+  http://www.springframework.org/schema/context/spring-context.xsd
+  http://www.springframework.org/schema/mvc
+  http://www.springframework.org/schema/mvc/spring-mvc.xsd
+  http://www.springframework.org/schema/tx
+  http://www.springframework.org/schema/tx/spring-tx.xsd http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd">
+
+    <context:component-scan base-package="api"/>
+
+    <bean id="bitmexAdaptor" lazy-init="true" class="adaptor.BitmexAdaptor"/>
+    <bean id="abstractHandler" abstract="true" class="handler.AbstractCoreHandler">
+        <property name="bitmexAdaptor" ref="bitmexAdaptor"/>
+    </bean>
+    <bean id="orderBooKL2_25_handler" init-method="init" parent="abstractHandler" class="handler.OrderBooKL2_25Handler">
+    </bean>
+    <bean id="orderBookRepository" class="repository.OrderBookRepository"/>
+
+
+    <!--<jdbc:embedded-database id="dataSource" type="H2">
+    </jdbc:embedded-database>
+
+    &lt;!&ndash; Run H2 web server within application that will access the same in-memory database &ndash;&gt;
+    <bean id="h2Server" class="org.h2.tools.Server" factory-method="createTcpServer" init-method="start" destroy-method="stop" depends-on="h2WebServer">
+        <constructor-arg value="-tcp,-tcpAllowOthers,-tcpPort,9092"/>
+    </bean>
+    <bean id="h2WebServer" class="org.h2.tools.Server" factory-method="createWebServer" init-method="start" destroy-method="stop">
+        <constructor-arg value="-web,-webAllowOthers,-webPort,8082"/>
+    </bean>-->
+
+    <mvc:annotation-driven/>
+
+    <tx:annotation-driven transaction-manager="myTransactionManager" />
+
+    <bean id="myTransactionManager"
+          class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="dataSource"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="org.h2.Driver" />
+        <property name="url" value="jdbc:h2:mem:db;DB_CLOSE_DELAY=-1" />
+        <property name="username" value="sa" />
+        <property name="password" value="" />
+    </bean>
+
+    <bean id="sessionFactory"
+          class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="packagesToScan" value="repository.model" />
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.connection.driver_class">org.h2.Driver</prop>
+                <prop key="hibernate.dialect">org.hibernate.dialect.H2Dialect</prop>
+                <prop key="hibernate.connection.url">jdbc:h2:mem:db;DB_CLOSE_DELAY=-1</prop>
+                <prop key="hibernate.connection.username">sa</prop>
+                <prop key="hibernate.connection.password"></prop>
+                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.hbm2ddl.auto">create-drop</prop>
+            </props>
+        </property>
+    </bean>
+
+</beans>
