@@ -21,7 +21,9 @@
     </bean>
     <bean id="orderBooKL2_25_handler" init-method="init" parent="abstractHandler" class="handler.OrderBooKL2_25Handler">
     </bean>
-    <bean id="orderBookRepository" class="repository.OrderBookRepository"/>
+    <bean id="orderBookRepository" class="repository.OrderBookRepository">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
 
 
     <!--<jdbc:embedded-database id="dataSource" type="H2">
